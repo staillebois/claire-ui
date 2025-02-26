@@ -40,21 +40,23 @@ export function InputForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        <FormField
-          control={form.control}
-          name="question"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>How can I help you ?</FormLabel>
-              <FormControl>
-                <Input placeholder="Ask anything" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit">Submit</Button>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <div className="flex items-center space-x-4">
+          <FormField
+            control={form.control}
+            name="question"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>How can I help you ?</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ask anything" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <Button type="submit">Submit</Button>
+        </div>
       </form>
     </Form>
   )
