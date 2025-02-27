@@ -9,13 +9,13 @@ import { Button } from "@/components/ui/button"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { useState } from "react"
 
 const FormSchema = z.object({
   question: z.string().min(2, {
@@ -23,7 +23,10 @@ const FormSchema = z.object({
   }),
 })
 
-export function InputForm() {
+export function ChatForm() {
+
+  const [loading, setLoading] = useState(false)
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -31,17 +34,40 @@ export function InputForm() {
     },
   })
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
-    toast( "You submitted the following values:",{
-      description: JSON.stringify(data, null, 2),
-      icon: "🚀",
-    })
+  async function onSubmit(data: z.infer<typeof FormSchema>) {
+    setLoading(true)
+    try {
+      const response = await fetch("http://localhost:8080/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok")
+      }
+
+      const result = await response.json()
+      toast("You submitted the following values:", {
+        description: JSON.stringify(result, null, 2),
+        icon: "🚀",
+      })
+    } catch (error) {
+      toast("Error submitting form", {
+        description: (error as Error).message,
+        icon: "❌",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-end space-x-4">
           <FormField
             control={form.control}
             name="question"
@@ -55,7 +81,9 @@ export function InputForm() {
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Submitting..." : "Submit"}
+          </Button>
         </div>
       </form>
     </Form>
