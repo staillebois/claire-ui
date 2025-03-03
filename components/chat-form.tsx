@@ -26,6 +26,7 @@ const FormSchema = z.object({
 export function ChatForm() {
 
   const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState<string | null>(null)
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -50,10 +51,7 @@ export function ChatForm() {
       }
 
       const result = await response.json()
-      toast("You submitted the following values:", {
-        description: JSON.stringify(result, null, 2),
-        icon: "🚀",
-      })
+      setResult(JSON.stringify(result, null, 2))
     } catch (error) {
       toast("Error submitting form", {
         description: (error as Error).message,
@@ -61,31 +59,40 @@ export function ChatForm() {
       })
     } finally {
       setLoading(false)
+      form.reset()
     }
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="flex items-end space-x-4">
-          <FormField
-            control={form.control}
-            name="question"
-            render={({ field }) => (
-              <FormItem className="flex-1">
-                <FormLabel>How can I help you ?</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ask anything" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
-          </Button>
+    <div>
+      {result && (
+        <div className="mb-4 p-4 border rounded">
+          <h2 className="text-lg font-bold">Response:</h2>
+          <pre className="whitespace-pre-wrap break-words">{result}</pre>
         </div>
-      </form>
-    </Form>
+      )}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <div className="flex items-end space-x-4">
+            <FormField
+              control={form.control}
+              name="question"
+              render={({ field }) => (
+                <FormItem className="flex-1">
+                  <FormLabel>How can I help you ?</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ask anything" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={loading}>
+              {loading ? "Submitting..." : "Submit"}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
   )
 }
