@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button"
-import { Brain } from "lucide-react"
 import { ChatForm } from "@/components/chat-form";
 
 export default function Home() {
