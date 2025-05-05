@@ -1,16 +1,24 @@
 "use client"
 
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { useImmer } from 'use-immer';
 import { useState, useEffect, useRef, FormEvent } from "react"
+import ChatMessages from '@/components/chat-messages';
+import ChatInput from '@/components/chat-input';
 
 export function ChatForm() {
 
-  const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
-  const [input, setInput] = useState<string>("")
   const ws = useRef<WebSocket | null>(null)
+
+  const [messages, setMessages] = useImmer<Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    loading?: boolean;
+    error?: boolean;
+    sources?: string[];
+  }>>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const isLoading = messages.length > 0 && messages[messages.length - 1].loading === true;
 
   useEffect(() => {
     ws.current = new WebSocket("ws://localhost:8080/stream")
@@ -21,7 +29,12 @@ export function ChatForm() {
 
     ws.current.onmessage = (event) => {
       const message = event.data
-      setResult((prevResult) => (prevResult ? prevResult + message : message))
+      setMessages(draft => {
+        if (draft.length > 0) {
+          draft[draft.length - 1].content += message;
+          draft[draft.length - 1].loading = false;
+        }
+      });
     }
 
     ws.current.onerror = (error) => {
@@ -41,12 +54,18 @@ export function ChatForm() {
     }
   }, [])
 
-  async function onSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setLoading(true)
+  async function submitNewMessage() {
+    const trimmedMessage = newMessage.trim();
+    if (!trimmedMessage || isLoading) return;
+
+    setMessages(draft => [...draft,
+      { role: 'user', content: trimmedMessage },
+      { role: 'assistant', content: '', sources: [], loading: true }
+    ]);
+    setNewMessage('');
     try {
       if (ws.current?.readyState === WebSocket.OPEN) {
-        ws.current.send(input)
+        ws.current.send(trimmedMessage)
       } else {
         throw new Error("WebSocket is not open")
       }
@@ -55,33 +74,28 @@ export function ChatForm() {
         description: (error as Error).message,
         icon: "❌",
       })
-    } finally {
-      setLoading(false)
-      setInput("")
+      setMessages(draft => {
+        draft[draft.length - 1].loading = false;
+        draft[draft.length - 1].error = true;
+      });
     }
   }
 
   return (
     <div>
-      {result && (
-        <div className="mb-4 p-4 border rounded h-2/3 overflow-y-auto">
-          <h2 className="text-lg font-bold">Response:</h2>
-          <pre className="whitespace-pre-wrap break-words">{result}</pre>
-        </div>
+      {messages.length === 0 && (
+        <div>{/* Chatbot welcome message */}</div>
       )}
-      <form onSubmit={onSubmit}>
-        <div className="flex items-end space-x-4">
-          <Input 
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask anything" 
-            className="bg-white/10 rounded-full"
-          />
-          <Button type="submit" disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
-          </Button>
-        </div>
-      </form>
+      <ChatMessages
+        messages={messages}
+        isLoading={isLoading}
+      />
+      <ChatInput
+        newMessage={newMessage}
+        isLoading={isLoading}
+        setNewMessage={setNewMessage}
+        submitNewMessage={submitNewMessage}
+      />
     </div>
   )
 }
