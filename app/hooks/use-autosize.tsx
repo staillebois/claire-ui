@@ -1,6 +1,6 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 
-function useAutosize(value: String) {
+function useAutosize(value: string) {
   const ref = useRef<HTMLTextAreaElement>(null);
   const [borderWidth, setBorderWidth] = useState(0);
 

@@ -2,7 +2,7 @@
 
 import { toast } from "sonner"
 import { useImmer } from 'use-immer';
-import { useState, useEffect, useRef, FormEvent } from "react"
+import { useState, useEffect, useRef } from "react"
 import ChatMessages from '@/components/chat-messages';
 import ChatInput from '@/components/chat-input';
 
